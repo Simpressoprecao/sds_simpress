@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar Email - SDS HP Simpress</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #333; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { margin-bottom: 20px; color: #003366; }
+        .card { background: white; border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .campo { margin-bottom: 16px; }
+        .campo label { display: block; font-weight: 600; margin-bottom: 4px; color: #555; font-size: 13px; }
+        .campo input, .campo textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        .campo textarea { min-height: 100px; resize: vertical; }
+        .campo small { color: #999; font-size: 12px; }
+        .btn { padding: 12px 24px; background: #003366; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn:hover { background: #002244; }
+        .msg { display: none; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; }
+        .msg.sucesso { display: block; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .msg.erro { display: block; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .voltar { display: inline-block; margin-bottom: 20px; color: #003366; text-decoration: none; }
+        .voltar:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="voltar">&larr; Voltar ao Dashboard</a>
+        <h1>Configurar Email</h1>
+        <div id="msg" class="msg"></div>
+        <div class="card">
+            <form id="configForm">
+                <div class="campo">
+                    <label>Servidor SMTP</label>
+                    <input type="text" name="smtp_host" value="{{ config.get('smtp_host', 'smtp.office365.com') }}" placeholder="smtp.office365.com">
+                    <small>Outlook: smtp.office365.com | Gmail: smtp.gmail.com</small>
+                </div>
+                <div class="campo">
+                    <label>Porta SMTP</label>
+                    <input type="number" name="smtp_port" value="{{ config.get('smtp_port', 587) }}">
+                    <small>Geralmente 587 (TLS) ou 465 (SSL)</small>
+                </div>
+                <div class="campo">
+                    <label>Email remetente</label>
+                    <input type="email" name="email_from" value="{{ config.get('email_from', '') }}" placeholder="seu@email.com">
+                </div>
+                <div class="campo">
+                    <label>Senha / App Password</label>
+                    <input type="password" name="email_pass" value="{{ config.get('email_pass', '') }}">
+                    <small>Para Gmail, use <strong>Senha de App</strong>. Para Outlook, use a senha normal ou <strong>Senha de App</strong> se tiver 2FA.</small>
+                </div>
+                <div class="campo">
+                    <label>Email destinat\u00e1rio (padr\u00e3o)</label>
+                    <input type="email" name="email_to" value="{{ config.get('email_to', '') }}" placeholder="destinatario@email.com">
+                </div>
+                <div class="campo">
+                    <label>Mensagem do email</label>
+                    <textarea name="mensagem">{{ config.get('mensagem', '') }}</textarea>
+                </div>
+                <button type="submit" class="btn">Salvar Configura\u00e7\u00e3o</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        document.getElementById('configForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = new FormData(this);
+            const resp = await fetch('/config-email', { method: 'POST', body: form });
+            const data = await resp.json();
+            const msg = document.getElementById('msg');
+            msg.className = 'msg ' + (data.ok ? 'sucesso' : 'erro');
+            msg.textContent = data.mensagem || data.erro || 'OK';
+        });
+    </script>
+</body>
+</html>

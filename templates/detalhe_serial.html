@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serial {{ serial }} - Simpress</title>
+    <style>
+        :root {
+            --primary: #0a1929;
+            --primary-light: #1a3a5c;
+            --accent: #ff6b00;
+            --bg: #f0f4f8;
+            --card: #ffffff;
+            --text: #1a1a2e;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --radius: 10px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.06);
+            --transition: 0.2s ease;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+        .sidebar { width: 200px; background: #fff; border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+        .sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+        .sidebar-logo h2 { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+        .sidebar-logo h2 .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); display: inline-block; }
+        .sidebar-logo span { font-size: 11px; color: var(--text-secondary); font-weight: 500; margin-top: 2px; display: block; padding-left: 16px; }
+        .sidebar .nav-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-light, #94a3b8); padding: 16px 16px 6px; }
+        .sidebar a { display: flex; align-items: center; gap: 10px; padding: 8px 16px; margin: 0 8px; border-radius: 8px; color: #475569; text-decoration: none; font-size: 13px; font-weight: 500; transition: var(--transition); }
+        .sidebar a:hover { background: #f1f5f9; color: var(--text); }
+        .sidebar a.ativo { background: #eff6ff; color: var(--primary); font-weight: 600; }
+        .sidebar a .icone { font-size: 15px; width: 20px; text-align: center; }
+        .sidebar .nav-divider { border: none; border-top: 1px solid var(--border); margin: 8px 12px; }
+        .sidebar .import-link { color: var(--accent); }
+        .main { flex: 1; padding: 0; overflow-y: auto; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 32px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+        .topbar h1 { font-size: 20px; font-weight: 700; color: var(--text); }
+        .topbar .serial-tag { font-family: 'Courier New', monospace; background: var(--primary); color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 13px; letter-spacing: 0.3px; }
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: var(--transition); text-decoration: none; border: none; font-family: inherit; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-light); }
+        .btn-accent { background: var(--accent); color: #fff; }
+        .btn-accent:hover { background: #e05f00; }
+        .btn-success { background: #10b981; color: #fff; }
+        .btn-success:hover { background: #059669; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .content { padding: 24px 32px; }
+        .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 20px; overflow: hidden; }
+        .card-title { padding: 14px 20px; font-weight: 700; font-size: 14px; color: var(--text); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .card-body { padding: 16px 20px; }
+        .tabela-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #f8fafc; text-align: left; padding: 10px 12px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; }
+        td { padding: 6px 12px; border-bottom: 1px solid #f0f0f0; }
+        td[contenteditable] { cursor: text; outline: none; }
+        td[contenteditable]:focus { background: #fff8e1; box-shadow: inset 0 0 0 2px #ffc107; border-radius: 3px; }
+        td[contenteditable]:hover { background: #f8f9fa; }
+        .empty { padding: 40px; text-align: center; color: #999; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; }
+        .btn-primary { background: #003366; color: white; }
+        .btn-primary:hover { background: #002244; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #218838; }
+        .btn-orange { background: #ff6600; color: white; }
+        .btn-orange:hover { background: #e55c00; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+        .toast { position: fixed; bottom: 30px; right: 30px; padding: 12px 20px; border-radius: 8px; color: white; font-size: 14px; opacity: 0; transition: opacity 0.3s; z-index: 999; }
+        .toast.show { opacity: 1; }
+        .toast.sucesso { background: #28a745; }
+        .toast.erro { background: #dc3545; }
+            .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+            .info-item .label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+            .info-item .value { font-size: 14px; font-weight: 600; color: #333; margin-top: 2px; }
+            .cards-detalhe { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+            .cards-detalhe .card-full { grid-column: 1 / -1; }
+            .info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+            .info-row:last-child { border-bottom: none; }
+            .info-row .label { color: #999; font-weight: 500; }
+            .info-row .value { color: #333; font-weight: 600; text-align: right; }
+            .toner-mini { display: flex; align-items: center; gap: 8px; margin: 6px 0 2px; }
+            .toner-mini .desc { font-size: 13px; color: #333; flex: 1; }
+            .toner-mini .pct { font-size: 13px; font-weight: 700; min-width: 36px; text-align: right; }
+            .toner-track { height: 6px; border-radius: 3px; background: #eee; overflow: hidden; margin-bottom: 10px; }
+            .toner-track-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+            .toner-track-fill.alta { background: #28a745; }
+            .toner-track-fill.media { background: #ffc107; }
+            .toner-track-fill.baixa { background: #dc3545; }
+            .alerta-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; margin: 2px; }
+            .alerta-badge.aviso { background: #fff3cd; color: #856404; }
+            .alerta-badge.acao { background: #cce5ff; color: #004085; }
+            .alerta-badge.congestionamento { background: #f8d7da; color: #721c24; }
+            .alerta-badge.subunidade { background: #e2e3e5; color: #383d41; }
+            .alerta-badge.outro { background: #d6d8db; color: #383d41; }
+            .contador-tag { display: inline-flex; align-items: center; gap: 4px; background: #f0f4f8; padding: 4px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; color: #555; margin: 3px; }
+            .contador-tag .num { color: #003366; font-size: 14px; }
+            .contadores-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
+        .obs-area { width: 100%; min-height: 80px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; font-family: inherit; resize: vertical; }
+        .obs-area:focus { outline: none; border-color: #ff6600; box-shadow: 0 0 0 2px rgba(255,102,0,0.15); }
+        .obs-item { padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+        .obs-item:last-child { border: none; }
+        .obs-item .data { font-size: 11px; color: #999; }
+        .obs-item .texto { margin-top: 2px; }
+        .btn-excluir { background: none; border: none; color: #dc3545; font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; opacity: 0.5; }
+        .btn-excluir:hover { opacity: 1; }
+        .acoes-topo { display: flex; gap: 8px; flex-wrap: wrap; }
+        @media (max-width: 768px) { .sidebar { display: none; } .topo { flex-direction: column; align-items: flex-start; } }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <h2><span class="logo-dot"></span> SDS Simpress</h2>
+            <span>Painel de Monitoramento</span>
+        </div>
+        <div class="nav-label">Principal</div>
+        <a href="/"><span class="icone">&#9632;</span> Dispositivos</a>
+        <a href="/os"><span class="icone">&#9997;</span> OS Chamados</a>
+        <a href="/troca"><span class="icone">&#8635;</span> Troca Antecipada</a>
+        <hr class="nav-divider">
+        <div class="nav-label">Utilit\u00e1rios</div>
+        <a href="/exportar-contadores"><span class="icone">&#8681;</span> Exportar Contadores</a>
+        <a href="#" onclick="importarDados(); return false;" class="import-link"><span class="icone">&#8634;</span> Importar Dados</a>
+        <hr class="nav-divider">
+        <div class="nav-label">Sistema</div>
+        <a href="/config-email"><span class="icone">&#9993;</span> Email</a>
+        <a href="/config-db"><span class="icone">&#9881;</span> Banco de Dados</a>
+    </div>
+    <div class="main">
+        <div class="topbar">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <a href="javascript:history.back()" style="color:var(--text);text-decoration:none;font-size:18px;">&larr;</a>
+                <h1>Ficha do Dispositivo</h1>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <span class="serial-tag">{{ serial }}</span>
+                <a href="/relatorio-serial/{{ serial }}" class="btn btn-accent btn-sm">Gerar Relat\u00f3rio</a>
+            </div>
+        </div>
+        <div class="content">
+
+        {% if disp_info %}
+        <div class="card">
+            <div class="card-title">Dados do SDS</div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item"><div class="label">Modelo</div><div class="value">{{ disp_info.modelo }}</div></div>
+                    <div class="info-item"><div class="label">Cliente</div><div class="value">{{ disp_info.cliente }}</div></div>
+                    <div class="info-item"><div class="label">Localiza\u00e7\u00e3o</div><div class="value">{{ disp_info.localizacao }}</div></div>
+                    <div class="info-item"><div class="label">IP</div><div class="value">{{ disp_info.ip }}</div></div>
+                    <div class="info-item"><div class="label">Zona</div><div class="value">{{ disp_info.zona }}</div></div>
+                    <div class="info-item"><div class="label">Atualiza\u00e7\u00e3o</div><div class="value">{{ disp_info.ultima_atualizacao[:16] }}</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cards-detalhe">
+            {% if disp_info.contagens %}
+            <div class="card">
+                <div class="card-title">Contagens</div>
+                <div class="card-body">
+                    <div class="contadores-wrap">
+                        {% for k, v in disp_info.contagens.items() %}
+                        <span class="contador-tag">{{ k[:25] }} <span class="num">{{ v }}</span></span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if disp_info.consumiveis %}
+            <div class="card">
+                <div class="card-title">Consum\u00edveis</div>
+                <div class="card-body">
+                    {% for c in disp_info.consumiveis %}
+                    {% set nivel_num = c.nivel|replace('%','')|int %}
+                    <div class="toner-mini">
+                        <span class="desc">{{ c.descricao }}</span>
+                        <span class="pct" style="color:{% if nivel_num <= 20 %}#dc3545{% elif nivel_num <= 50 %}#ffc107{% else %}#28a745{% endif %}">{{ c.nivel }}</span>
+                    </div>
+                    <div class="toner-track">
+                        <div class="toner-track-fill {% if nivel_num <= 20 %}baixa{% elif nivel_num <= 50 %}media{% else %}alta{% endif %}" style="width:{{ nivel_num }}%"></div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if disp_info.alertas_freq or disp_info.alertas_anteriores %}
+            <div class="card card-full">
+                <div class="card-title">Alertas</div>
+                <div class="card-body">
+                    {% if disp_info.alertas_freq %}
+                    <div style="margin-bottom:10px;">
+                        <strong style="font-size:13px;color:#555;">Frequ\u00eancia por tipo:</strong>
+                        <div style="margin-top:8px;">
+                            {% for a in disp_info.alertas_freq %}
+                            <span class="alerta-badge {% if 'Aviso' in a.classe %}aviso{% elif 'A\u00e7\u00e3o' in a.classe %}acao{% elif 'Congestionamento' in a.classe %}congestionamento{% elif 'Subunidade' in a.classe %}subunidade{% else %}outro{% endif %}">
+                                {{ a.classe }}: {{ a.contagem }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if disp_info.alertas_anteriores %}
+                    <details>
+                        <summary style="cursor:pointer;font-size:13px;color:#003366;font-weight:600;">{{ disp_info.alertas_anteriores|length }} alertas anteriores</summary>
+                        <div style="margin-top:8px;max-height:200px;overflow-y:auto;">
+                            {% for a in disp_info.alertas_anteriores %}
+                            <div class="info-row">
+                                <span class="label">{{ a.data[:16] }}</span>
+                                <span class="value">{{ a.motivo[:60] }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </details>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-title">
+                <span>Observa\u00e7\u00f5es</span>
+                <button class="btn btn-primary btn-sm" onclick="salvarObservacao()">Adicionar</button>
+            </div>
+            <div class="card-body">
+                <textarea id="obsTexto" class="obs-area" placeholder="Digite uma observa\u00e7\u00e3o sobre este dispositivo..."></textarea>
+                <div style="margin-top:12px;max-height:300px;overflow-y:auto;">
+                    {% if observacoes %}
+                        {% for obs in observacoes|reverse %}
+                        <div class="obs-item" data-idx="{{ loop.revindex0 }}">
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                                <div>
+                                    <div class="data">{{ obs.data }}</div>
+                                    <div class="texto">{{ obs.texto }}</div>
+                                </div>
+                                <button class="btn-excluir" onclick="excluirObservacao({{ loop.revindex0 }})" title="Excluir">&times;</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div style="color:#999;font-size:13px;">Nenhuma observa\u00e7\u00e3o registrada</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span>OS Chamados ({{ os_list|length }})</span>
+                <div>
+                    {% if os_list %}
+                    <button class="btn btn-success btn-sm" onclick="salvarOS()">Salvar OS</button>
+                    {% endif %}
+                </div>
+            </div>
+            {% if os_list %}
+            <div class="tabela-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>N\u00ba OS</th><th>Modelo</th><th>Loja</th><th>Abertura</th><th>Previs\u00e3o</th><th>Finalizado</th>
+                            <th>Descri\u00e7\u00e3o</th><th>Observa\u00e7\u00e3o</th><th>Status</th><th>Ocorr\u00eancia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in os_list %}
+                        <tr data-id="{{ item.numero_os }}" data-tipo="os">
+                            <td><strong>{{ item.numero_os }}</strong></td>
+                            <td contenteditable="true" data-campo="modelo">{{ item.modelo }}</td>
+                            <td contenteditable="true" data-campo="localidade">{{ item.localidade[:25] }}</td>
+                            <td contenteditable="true" data-campo="abertura">{{ item.abertura[:10] }}</td>
+                            <td contenteditable="true" data-campo="previsao">{{ item.previsao[:10] }}</td>
+                            <td contenteditable="true" data-campo="finalizado">{{ item.finalizado[:10] }}</td>
+                            <td contenteditable="true" data-campo="descricao">{{ item.descricao[:35] }}</td>
+                            <td contenteditable="true" data-campo="observacao">{{ item.observacao[:35] }}</td>
+                            <td contenteditable="true" data-campo="status">{{ item.status }}</td>
+                            <td contenteditable="true" data-campo="ocorrencia">{{ item.ocorrencia[:35] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty">Nenhuma OS para este serial</div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span>Troca Antecipada ({{ troca_list|length }})</span>
+                <div>
+                    {% if troca_list %}
+                    <button class="btn btn-success btn-sm" onclick="salvarTroca()">Salvar Troca</button>
+                    {% endif %}
+                </div>
+            </div>
+            {% if troca_list %}
+            <div class="tabela-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Loja</th><th>UF</th><th>Modelo</th><th>% Toner</th><th>Cor</th>
+                            <th>Data Leitura</th><th>Data Atend.</th><th>Descri\u00e7\u00e3o</th><th>Status</th><th>Retorno</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in troca_list %}
+                        <tr data-serial="{{ item.serial }}" data-data="{{ item.data_atendimento }}" data-tipo="troca">
+                            <td contenteditable="true" data-campo="loja">{{ item.loja[:25] }}</td>
+                            <td contenteditable="true" data-campo="uf">{{ item.uf }}</td>
+                            <td contenteditable="true" data-campo="modelo">{{ item.modelo }}</td>
+                            <td contenteditable="true" data-campo="percentual_toner">{{ item.percentual_toner }}</td>
+                            <td contenteditable="true" data-campo="cor_toner">{{ item.cor_toner }}</td>
+                            <td>{{ item.data_leitura[:10] }}</td>
+                            <td><strong>{{ item.data_atendimento[:10] }}</strong></td>
+                            <td contenteditable="true" data-campo="descricao">{{ item.descricao[:35] }}</td>
+                            <td contenteditable="true" data-campo="status">{{ item.status }}</td>
+                            <td contenteditable="true" data-campo="retorno">{{ item.retorno[:25] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty">Nenhuma troca antecipada para este serial</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        async function salvarOS() {
+            const linhas = document.querySelectorAll('tr[data-tipo="os"]');
+            let salvos = 0;
+            for (const tr of linhas) {
+                const dados = { numero_os: tr.dataset.id };
+                tr.querySelectorAll('[contenteditable]').forEach(td => {
+                    dados[td.dataset.campo] = td.textContent.trim();
+                });
+                const resp = await fetch('/api/salvar-os', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dados)
+                });
+                if ((await resp.json()).ok) salvos++;
+            }
+            mostrarToast(salvos + ' OS salva(s) com sucesso!', 'sucesso');
+        }
+
+        async function salvarTroca() {
+            const linhas = document.querySelectorAll('tr[data-tipo="troca"]');
+            let salvos = 0;
+            for (const tr of linhas) {
+                const dados = { serial: tr.dataset.serial, data_atendimento: tr.dataset.data };
+                tr.querySelectorAll('[contenteditable]').forEach(td => {
+                    dados[td.dataset.campo] = td.textContent.trim();
+                });
+                const resp = await fetch('/api/salvar-troca', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dados)
+                });
+                if ((await resp.json()).ok) salvos++;
+            }
+            mostrarToast(salvos + ' troca(s) salva(s) com sucesso!', 'sucesso');
+        }
+
+        async function salvarObservacao() {
+            const texto = document.getElementById('obsTexto').value.trim();
+            if (!texto) return mostrarToast('Digite uma observa\u00e7\u00e3o', 'erro');
+            const resp = await fetch('/api/observacao', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ serial: '{{ serial }}', texto })
+            });
+            const data = await resp.json();
+            if (data.ok) {
+                mostrarToast('Observa\u00e7\u00e3o salva!', 'sucesso');
+                document.getElementById('obsTexto').value = '';
+                setTimeout(() => location.reload(), 1000);
+            }
+        }
+
+        async function excluirObservacao(idx) {
+            if (!confirm('Excluir esta observa\u00e7\u00e3o?')) return;
+            const resp = await fetch('/api/observacao/{{ serial }}/' + idx, { method: 'DELETE' });
+            const data = await resp.json();
+            if (data.ok) { mostrarToast('Observa\u00e7\u00e3o exclu\u00edda!', 'sucesso'); setTimeout(() => location.reload(), 800); }
+            else mostrarToast('Erro ao excluir', 'erro');
+        }
+
+        async function importarDados() {
+            try {
+                const resp = await fetch('/importar-dados', { method: 'POST' });
+                const data = await resp.json();
+                if (data.ok) { alert(data.mensagem); location.reload(); }
+                else alert(data.erro || 'Erro');
+            } catch (err) { alert('Erro: ' + err.message); }
+        }
+
+        function mostrarToast(msg, tipo) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast ' + tipo + ' show';
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

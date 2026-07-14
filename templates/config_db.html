@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar Banco - SDS HP Simpress</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #333; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; }
+        h1 { margin-bottom: 20px; color: #003366; }
+        .card { background: white; border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .campo { margin-bottom: 16px; }
+        .campo label { display: block; font-weight: 600; margin-bottom: 4px; color: #555; font-size: 13px; }
+        .campo input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        .campo small { color: #999; font-size: 12px; }
+        .btn { padding: 12px 24px; background: #003366; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn:hover { background: #002244; }
+        .msg { display: none; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; }
+        .msg.sucesso { display: block; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .msg.erro { display: block; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .voltar { display: inline-block; margin-bottom: 20px; color: #003366; text-decoration: none; }
+        .voltar:hover { text-decoration: underline; }
+        .info { background: #e8f4fd; border: 1px solid #b8daff; color: #004085; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="voltar">&larr; Voltar ao Dashboard</a>
+        <h1>Configurar Banco MySQL</h1>
+        <div class="info">
+            Configure os dados de conexao do MySQL do seu cPanel.
+            Crie o banco primeiro no cPanel e importe o arquivo <strong>schema.sql</strong> pelo phpMyAdmin.
+        </div>
+        <div id="msg" class="msg"></div>
+        <div class="card">
+            <form id="configForm">
+                <div class="campo">
+                    <label>Host</label>
+                    <input type="text" name="host" value="{{ config.get('host', 'localhost') }}" placeholder="localhost">
+                    <small>No cPanel geralmente e localhost ou o endereco do servidor</small>
+                </div>
+                <div class="campo">
+                    <label>Porta</label>
+                    <input type="number" name="port" value="{{ config.get('port', 3306) }}">
+                </div>
+                <div class="campo">
+                    <label>Usu\u00e1rio</label>
+                    <input type="text" name="user" value="{{ config.get('user', 'root') }}" placeholder="usuario_mysql">
+                </div>
+                <div class="campo">
+                    <label>Senha</label>
+                    <input type="password" name="password" value="{{ config.get('password', '') }}" placeholder="senha">
+                </div>
+                <div class="campo">
+                    <label>Nome do banco</label>
+                    <input type="text" name="database" value="{{ config.get('database', 'sds_simpress') }}" placeholder="sds_simpress">
+                    <small>Crie o banco no cPanel e importe o schema.sql</small>
+                </div>
+                <button type="submit" class="btn">Salvar e Testar Conex\u00e3o</button>
+            </form>
+        </div>
+        <div style="margin-top: 16px; text-align: center;">
+            <a href="/schema.sql" class="btn" style="text-decoration: none; display: inline-block;" download>Baixar schema.sql</a>
+        </div>
+    </div>
+    <script>
+        document.getElementById('configForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = new FormData(this);
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.textContent = 'Testando...';
+            try {
+                const resp = await fetch('/config-db', { method: 'POST', body: form });
+                const data = await resp.json();
+                const msg = document.getElementById('msg');
+                msg.className = 'msg ' + (data.ok ? 'sucesso' : 'erro');
+                msg.textContent = data.mensagem || data.erro || 'OK';
+            } catch (err) {
+                const msg = document.getElementById('msg');
+                msg.className = 'msg erro';
+                msg.textContent = 'Erro: ' + err.message;
+            }
+            btn.disabled = false;
+            btn.textContent = 'Salvar e Testar Conex\u00e3o';
+        });
+    </script>
+</body>
+</html>

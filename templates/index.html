@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDS Dispositivos - Simpress</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --accent: #f97316;
+  --accent-hover: #ea580c;
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --text-light: #94a3b8;
+  --border: #e2e8f0;
+  --sidebar-bg: #ffffff;
+  --sidebar-text: #475569;
+  --sidebar-active: #2563eb;
+  --sidebar-hover: #f1f5f9;
+  --success: #22c55e;
+  --warning: #eab308;
+  --danger: #ef4444;
+  --info: #06b6d4;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+  --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.02);
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+/* Sidebar */
+.sidebar { width: 200px; background: var(--sidebar-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+.sidebar-logo h2 { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px; }
+.sidebar-logo h2 .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); display: inline-block; }
+.sidebar-logo span { font-size: 11px; color: var(--text-secondary); font-weight: 500; margin-top: 2px; display: block; padding-left: 16px; }
+.sidebar .nav-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-light); padding: 16px 16px 6px; }
+.sidebar a { display: flex; align-items: center; gap: 10px; padding: 8px 16px; margin: 0 8px; border-radius: 8px; color: var(--sidebar-text); text-decoration: none; font-size: 13px; font-weight: 500; transition: var(--transition); }
+.sidebar a:hover { background: var(--sidebar-hover); color: var(--text); }
+.sidebar a.ativo { background: #eff6ff; color: var(--sidebar-active); font-weight: 600; }
+.sidebar a .icone { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+.sidebar .nav-divider { border: none; border-top: 1px solid var(--border); margin: 8px 12px; }
+.sidebar .import-link { color: var(--accent); }
+.sidebar .import-link:hover { color: var(--accent-hover); background: #fff7ed; }
+
+/* Main */
+.main { flex: 1; min-width: 0; }
+
+/* Top bar */
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 28px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.topbar-left h1 { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+.topbar-left .count-badge { font-size: 12px; font-weight: 500; color: var(--text-secondary); background: var(--bg); padding: 2px 10px; border-radius: 20px; }
+.topbar-acoes { display: flex; gap: 8px; align-items: center; }
+.search-box { display: flex; }
+.search-box input { padding: 7px 12px; border: 1px solid var(--border); border-right: none; border-radius: 8px 0 0 8px; font-size: 13px; width: 200px; outline: none; font-family: inherit; transition: var(--transition); }
+.search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+.search-box button { padding: 7px 14px; background: var(--primary); color: #fff; border: none; border-radius: 0 8px 8px 0; cursor: pointer; font-size: 13px; font-weight: 500; transition: var(--transition); }
+.search-box button:hover { background: var(--primary-dark); }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: var(--transition); text-decoration: none; border: none; font-family: inherit; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+.btn-outline:hover { background: var(--bg); border-color: #cbd5e1; color: var(--text); }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); box-shadow: 0 4px 12px rgba(37,99,235,0.3); transform: translateY(-1px); }
+
+/* Content */
+.content { padding: 20px 28px; }
+
+/* Status */
+.status-msg { display: none; padding: 10px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; font-weight: 500; }
+.status-msg.erro { display: flex; align-items: center; gap: 8px; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.status-msg.sucesso { display: flex; align-items: center; gap: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+
+/* Summary cards */
+.cards-resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.card-resumo { background: var(--card); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); border: 1px solid var(--border); display: flex; align-items: center; gap: 14px; transition: var(--transition); }
+.card-resumo:hover { box-shadow: var(--shadow-md); }
+.card-resumo .icon-wrap { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.card-resumo .icon-wrap.blue { background: #eff6ff; color: var(--primary); }
+.card-resumo .icon-wrap.orange { background: #fff7ed; color: var(--accent); }
+.card-resumo .icon-wrap.green { background: #f0fdf4; color: var(--success); }
+.card-resumo .icon-wrap.red { background: #fef2f2; color: var(--danger); }
+.card-resumo .info { flex: 1; min-width: 0; }
+.card-resumo .num { font-size: 24px; font-weight: 800; color: var(--text); line-height: 1.1; letter-spacing: -0.5px; }
+.card-resumo .label { font-size: 11px; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px; }
+
+/* Charts */
+.graficos-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+.grafico-card { background: var(--card); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+.grafico-card h3 { font-size: 11px; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.grafico-card canvas { max-height: 180px; }
+
+/* Table */
+.tabela-wrap { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: auto; }
+.tabela-wrap table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tabela-wrap thead { position: sticky; top: 0; z-index: 5; }
+.tabela-wrap th { background: #f8fafc; padding: 10px 12px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; text-align: left; }
+.tabela-wrap td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text); font-size: 13px; }
+.tabela-wrap tbody tr:last-child td { border-bottom: none; }
+.tabela-wrap tbody tr:hover td { background: #f8fafc; }
+.linha-serial.aberta td { background: #f1f5f9 !important; }
+.toggle-card { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; cursor: pointer; color: var(--text-light); font-size: 9px; transition: var(--transition); border-radius: 4px; }
+.toggle-card:hover { background: #e2e8f0; color: var(--text); }
+.serial-link { color: var(--primary); font-weight: 600; text-decoration: none; font-family: 'SF Mono', 'Courier New', monospace; font-size: 12px; }
+.serial-link:hover { text-decoration: underline; }
+
+/* Expanded card */
+.card-expandido { display: flex; gap: 20px; padding: 20px; flex-wrap: wrap; }
+.card-exp-col { flex: 1; min-width: 170px; }
+.card-exp-header { font-size: 10px; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--border); text-transform: uppercase; letter-spacing: 0.6px; }
+.card-exp-col .info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; border-bottom: 1px solid #f1f5f9; }
+.card-exp-col .info-row .label { color: var(--text-secondary); font-weight: 500; }
+.card-exp-col .info-row .value { color: var(--text); font-weight: 600; text-align: right; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-exp-col .toner-mini { display: flex; align-items: center; gap: 6px; margin: 5px 0 2px; }
+.card-exp-col .toner-mini .desc { font-size: 12px; color: var(--text); flex: 1; font-weight: 500; }
+.card-exp-col .toner-mini .pct { font-size: 12px; font-weight: 700; min-width: 30px; text-align: right; }
+.card-exp-col .toner-track { height: 4px; border-radius: 4px; background: #f1f5f9; overflow: hidden; margin-bottom: 8px; }
+.card-exp-col .toner-track-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.toner-track-fill.ok { background: var(--success); }
+.toner-track-fill.warn { background: var(--warning); }
+.toner-track-fill.crit { background: var(--danger); }
+
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-alerta { background: #fef3c7; color: #92400e; }
+
+/* Modal */
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+.modal.ativo { display: flex; }
+.modal-content { background: var(--card); border-radius: 16px; padding: 28px; width: 90%; max-width: 420px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); animation: modalIn 0.2s ease; }
+@keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.modal-content h2 { margin-bottom: 4px; color: var(--text); font-size: 17px; }
+.modal-content .desc { color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; }
+.modal-content .campo { margin-bottom: 14px; }
+.modal-content .campo label { display: block; font-weight: 600; margin-bottom: 5px; color: var(--text); font-size: 13px; }
+.modal-content .campo input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; transition: var(--transition); }
+.modal-content .campo input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+.modal-acoes { display: flex; gap: 8px; margin-top: 20px; }
+.btn-ghost { background: #f1f5f9; color: var(--text-secondary); }
+.btn-ghost:hover { background: #e2e8f0; color: var(--text); }
+
+/* States */
+.loading { text-align: center; padding: 60px; color: var(--text-secondary); }
+.loading h2 { font-size: 16px; font-weight: 600; }
+.loading p { font-size: 13px; margin-top: 4px; }
+.empty-state { text-align: center; padding: 60px 40px; color: var(--text-secondary); background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); }
+.empty-state h2 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 1024px) { .graficos-row { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .sidebar { display: none; } .topbar { flex-direction: column; align-items: flex-start; gap: 10px; } .topbar-acoes { width: 100%; } .search-box input { width: 100%; } .content { padding: 16px; } .cards-resumo { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .cards-resumo { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h2><span class="logo-dot"></span> SDS Simpress</h2>
+    <span>Painel de Monitoramento</span>
+  </div>
+  <div class="nav-label">Principal</div>
+  <a href="/" class="ativo"><span class="icone">&#9632;</span> Dispositivos</a>
+  <a href="/os"><span class="icone">&#9997;</span> OS Chamados</a>
+  <a href="/troca"><span class="icone">&#8635;</span> Troca Antecipada</a>
+  <hr class="nav-divider">
+  <div class="nav-label">Utilit\u00e1rios</div>
+  <a href="/exportar-contadores"><span class="icone">&#8681;</span> Exportar Contadores</a>
+  <a href="#" onclick="importarDados(); return false;" class="import-link"><span class="icone">&#8634;</span> Importar Dados</a>
+  <hr class="nav-divider">
+  <div class="nav-label">Sistema</div>
+  <a href="/config-email"><span class="icone">&#9993;</span> Email</a>
+  <a href="/config-db"><span class="icone">&#9881;</span> Banco de Dados</a>
+</div>
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Dispositivos SDS</h1>
+      <span class="count-badge">{{ resumo.total }} ativos</span>
+    </div>
+    <div class="topbar-acoes">
+      <form class="search-box" id="buscaForm">
+        <input type="text" id="serialInput" placeholder="Buscar serial ou ID..." autofocus>
+        <button type="submit">Ir</button>
+      </form>
+      <button class="btn btn-primary" onclick="abrirModalBuscarEnviar()">Buscar e Enviar</button>
+      <button class="btn btn-outline" onclick="varrerTodos()" id="btnVarrer">Varrer Todos</button>
+    </div>
+  </div>
+  <div class="content">
+    <div id="statusMsg" class="status-msg"></div>
+    <div id="loading" class="loading" style="display:none;">
+      <h2>Buscando...</h2>
+      <p>Aguardando o SDS carregar os dados.</p>
+    </div>
+
+    {% if resumo.modelos_ord %}
+    <div class="cards-resumo">
+      <div class="card-resumo">
+        <div class="icon-wrap blue">&#9632;</div>
+        <div class="info">
+          <div class="num">{{ resumo.total }}</div>
+          <div class="label">Dispositivos</div>
+        </div>
+      </div>
+      <div class="card-resumo">
+        <div class="icon-wrap orange">&#9998;</div>
+        <div class="info">
+          <div class="num">{{ "{:,}".format(resumo.pb_total|int).replace(",", ".") }}</div>
+          <div class="label">P\u00e1ginas PB</div>
+        </div>
+      </div>
+      <div class="card-resumo">
+        <div class="icon-wrap green">&#9998;</div>
+        <div class="info">
+          <div class="num">{{ "{:,}".format(resumo.color_total|int).replace(",", ".") }}</div>
+          <div class="label">P\u00e1ginas Color</div>
+        </div>
+      </div>
+      <div class="card-resumo">
+        <div class="icon-wrap red">&#9888;</div>
+        <div class="info">
+          <div class="num" style="color:{% if resumo.toner_baixo > 0 %}var(--danger){% else %}var(--success){% endif %}">{{ resumo.toner_baixo }}</div>
+          <div class="label">Toners Cr\u00edticos</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="graficos-row">
+      <div class="grafico-card">
+        <h3>Por Modelo</h3>
+        <canvas id="chartModelos"></canvas>
+      </div>
+      <div class="grafico-card">
+        <h3>Alertas</h3>
+        <canvas id="chartAlertas"></canvas>
+      </div>
+    </div>
+    {% endif %}
+
+    <div id="dispositivosGrid">
+    {% if dispositivos %}
+    <div class="tabela-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:24px;"></th>
+            <th>Serial</th>
+            <th>Modelo</th>
+            <th>Cliente</th>
+            <th>IP</th>
+            <th>Local</th>
+            <th>Zona</th>
+            <th>PB</th>
+            <th>Color</th>
+            <th>Atualiza\u00e7\u00e3o</th>
+            <th>Alertas</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for d in dispositivos %}
+          {% if d.get('dispositivo') %}
+            {% set disp = d.get('dispositivo', {}) %}
+            {% set contagens = d.get('dispositivo', {}).get('contagens', {}) %}
+            {% set consumiveis = d.get('consumiveis', {}).get('consumiveis', []) %}
+            {% set alertas = d.get('alertas', {}).get('frequencia_alertas', []) %}
+            {% set alertas_ant = d.get('alertas', {}).get('alertas_anteriores', []) %}
+            {% set serial = disp.get('N\u00famero de s\u00e9rie', '') %}
+            {% set modelo = disp.get('modelo', '-') %}
+            {% set cliente = disp.get('breadcrumbs', [{}])[0].get('nome', '-') %}
+            {% set ip = disp.get('Endere\u00e7o IP', '-') %}
+            {% set local = disp.get('Localiza\u00e7\u00e3o', '-') %}
+            {% set zona = disp.get('Zona', '-') %}
+            {% set hostname = disp.get('hostname', '') %}
+            {% set mac = disp.get('Endere\u00e7o MAC', '') %}
+            {% set firmware = disp.get('Vers\u00e3o do firmware', '') %}
+            {% set pb = contagens.get('P\u00e1ginas monocrom\u00e1ticas', '') %}
+            {% set color = contagens.get('Colorido (equivalente A4)', '') %}
+            {% set ult = disp.get('\u00daltima atualiza\u00e7\u00e3o', '') %}
+          {% else %}
+            {% set serial = d.get('serial', '') %}
+            {% set modelo = d.get('modelo', '-') %}
+            {% set cliente = d.get('cliente', '-') %}
+            {% set ip = d.get('ip', '-') %}
+            {% set local = d.get('localizacao', '-') %}
+            {% set zona = d.get('zona', '-') %}
+            {% set pb = d.get('contador_pb', '') %}
+            {% set color = d.get('contador_color', '') %}
+            {% set ult = d.get('ultima_atualizacao', '') %}
+            {% set consumiveis = [] %}
+            {% set contagens = {} %}
+            {% set alertas = [] %}
+            {% set alertas_ant = [] %}
+            {% set hostname = '' %}
+            {% set mac = '' %}
+            {% set firmware = '' %}
+          {% endif %}
+        <tr class="linha-serial" data-serial="{{ serial }}">
+          <td><span class="toggle-card" data-serial="{{ serial }}">&#9654;</span></td>
+          <td><a href="/detalhe-serial/{{ serial }}" class="serial-link">{{ serial }}</a></td>
+          <td>{{ modelo[:30] }}</td>
+          <td>{{ cliente[:22] }}</td>
+          <td style="font-family:'SF Mono','Courier New',monospace;font-size:12px;">{{ ip }}</td>
+          <td>{{ local[:25] }}</td>
+          <td>{{ zona[:18] }}</td>
+          <td style="font-weight:700;color:var(--text);">{{ pb }}</td>
+          <td style="color:var(--text-secondary);">{{ color }}</td>
+          <td style="font-size:11px;color:var(--text-light);">{{ ult[:10] }}</td>
+          <td>{% if d.get('alertas') and d.alertas.get('frequencia_alertas') %}<span class="badge badge-alerta">{{ d.alertas.frequencia_alertas|length }}</span>{% else %}<span style="color:#cbd5e1;">-</span>{% endif %}</td>
+        </tr>
+        <tr class="card-detalhe" data-serial="{{ serial }}" style="display:none;">
+          <td colspan="11" style="padding:0;background:#fafbfc;">
+            <div class="card-expandido">
+              <div class="card-exp-col">
+                <div class="card-exp-header">Dispositivo</div>
+                <div class="info-row"><span class="label">Cliente</span><span class="value">{{ cliente }}</span></div>
+                {% if hostname %}<div class="info-row"><span class="label">Hostname</span><span class="value">{{ hostname }}</span></div>{% endif %}
+                <div class="info-row"><span class="label">IP</span><span class="value">{{ ip }}</span></div>
+                <div class="info-row"><span class="label">MAC</span><span class="value">{{ mac or '-' }}</span></div>
+                <div class="info-row"><span class="label">Firmware</span><span class="value">{{ firmware or '-' }}</span></div>
+                <div class="info-row"><span class="label">Local</span><span class="value">{{ local }}</span></div>
+                <div class="info-row"><span class="label">Zona</span><span class="value">{{ zona }}</span></div>
+              </div>
+              <div class="card-exp-col">
+                <div class="card-exp-header">Contagens</div>
+                {% for k, v in contagens.items() %}
+                <div class="info-row"><span class="label">{{ k[:22] }}</span><span class="value" style="font-weight:700;">{{ v }}</span></div>
+                {% endfor %}
+              </div>
+              <div class="card-exp-col">
+                <div class="card-exp-header">Consum\u00edveis</div>
+                {% if consumiveis %}
+                  {% for c in consumiveis %}
+                  {% set nivel_num = c.nivel|replace('%','')|int %}
+                  <div class="toner-mini">
+                    <span class="desc">{{ c.descricao[:28] }}</span>
+                    <span class="pct" style="color:{% if nivel_num <= 20 %}var(--danger){% elif nivel_num <= 50 %}var(--warning){% else %}var(--success){% endif %}">{{ c.nivel }}</span>
+                  </div>
+                  <div class="toner-track">
+                    <div class="toner-track-fill {% if nivel_num <= 20 %}crit{% elif nivel_num <= 50 %}warn{% else %}ok{% endif %}" style="width:{{ nivel_num }}%"></div>
+                  </div>
+                  {% endfor %}
+                {% else %}
+                <div style="color:var(--text-secondary);font-size:12px;padding:6px 0;">Sem dados</div>
+                {% endif %}
+              </div>
+              <div class="card-exp-col">
+                <div class="card-exp-header">Alertas <span style="font-weight:400;font-size:10px;">({{ alertas_ant|length }})</span></div>
+                {% if alertas %}
+                  {% for a in alertas %}
+                  <div class="info-row"><span class="label">{{ a.classe }}</span><span class="value" style="color:var(--danger);font-weight:700;">{{ a.contagem }}</span></div>
+                  {% endfor %}
+                {% else %}
+                <div style="color:var(--text-secondary);font-size:12px;padding:6px 0;">Nenhum</div>
+                {% endif %}
+                <div style="margin-top:14px;">
+                  <a href="/detalhe-serial/{{ serial }}" class="btn btn-outline" style="font-size:12px;padding:5px 12px;">Ver mais</a>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <h2>Nenhum dispositivo</h2>
+      <p>Busque por serial ou ID, ou clique em Varrer Todos.</p>
+    </div>
+    {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalBuscarEnviar">
+  <div class="modal-content">
+    <h2>Buscar e Enviar</h2>
+    <p class="desc">Busca dados no SDS e envia relat\u00f3rio por email.</p>
+    <form id="buscarEnviarForm">
+      <div class="campo">
+        <label>Serial ou ID</label>
+        <input type="text" name="serial" placeholder="Ex: BRBST3T0HX" required>
+      </div>
+      <div class="campo">
+        <label>Email do destinat\u00e1rio</label>
+        <input type="email" name="para" placeholder="email@exemplo.com" required>
+      </div>
+      <div class="modal-acoes">
+        <button type="submit" class="btn btn-primary" id="btnBuscarEnviar">Buscar e Enviar</button>
+        <button type="button" class="btn btn-ghost" onclick="fecharModalBuscarEnviar()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function abrirModalBuscarEnviar() { document.getElementById('modalBuscarEnviar').classList.add('ativo'); }
+function fecharModalBuscarEnviar() { document.getElementById('modalBuscarEnviar').classList.remove('ativo'); }
+
+document.getElementById('buscarEnviarForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const form = new FormData(this);
+  const btn = document.getElementById('btnBuscarEnviar');
+  btn.disabled = true; btn.textContent = 'Buscando...';
+  try {
+    const resp = await fetch('/buscar-enviar', { method: 'POST', body: form });
+    const data = await resp.json();
+    const msg = document.getElementById('statusMsg');
+    msg.className = 'status-msg ' + (data.ok ? 'sucesso' : 'erro');
+    msg.textContent = data.mensagem || data.erro || 'Erro';
+    if (data.ok) fecharModalBuscarEnviar();
+  } catch (err) {
+    const msg = document.getElementById('statusMsg');
+    msg.className = 'status-msg erro';
+    msg.textContent = 'Erro: ' + err.message;
+  }
+  btn.disabled = false; btn.textContent = 'Buscar e Enviar';
+});
+
+document.getElementById('modalBuscarEnviar').addEventListener('click', function(e) {
+  if (e.target === this) fecharModalBuscarEnviar();
+});
+
+document.getElementById('buscaForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const serial = document.getElementById('serialInput').value.trim();
+  if (!serial) return;
+  const msg = document.getElementById('statusMsg');
+  const grid = document.getElementById('dispositivosGrid');
+  const loading = document.getElementById('loading');
+  msg.style.display = 'none'; msg.className = 'status-msg';
+  grid.innerHTML = ''; loading.style.display = 'block';
+  try {
+    const resp = await fetch('/buscar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'serial=' + encodeURIComponent(serial)
+    });
+    const dados = await resp.json();
+    loading.style.display = 'none';
+    if (resp.ok) {
+      msg.className = 'status-msg sucesso';
+      msg.textContent = 'Dispositivo encontrado! Atualizando...';
+      location.reload();
+    } else {
+      msg.className = 'status-msg erro';
+      msg.textContent = dados.erro || 'Erro ao buscar';
+    }
+  } catch (err) {
+    loading.style.display = 'none';
+    msg.className = 'status-msg erro';
+    msg.textContent = 'Erro: ' + err.message;
+  }
+});
+
+async function varrerTodos() {
+  const btn = document.getElementById('btnVarrer');
+  const msg = document.getElementById('statusMsg');
+  btn.disabled = true; btn.textContent = 'Varrendo...';
+  msg.className = 'status-msg'; msg.textContent = 'Varredura iniciada...'; msg.style.display = 'block';
+  try {
+    const resp = await fetch('/varrer-todos', { method: 'POST' });
+    const data = await resp.json();
+    msg.className = 'status-msg ' + (data.ok ? 'sucesso' : 'erro');
+    msg.textContent = data.mensagem || data.erro;
+  } catch (err) {
+    msg.className = 'status-msg erro';
+    msg.textContent = 'Erro: ' + err.message;
+  }
+  btn.disabled = false; btn.textContent = 'Varrer Todos';
+}
+
+async function importarDados() {
+  const msg = document.getElementById('statusMsg');
+  msg.className = 'status-msg'; msg.textContent = 'Importando...'; msg.style.display = 'block';
+  try {
+    const resp = await fetch('/importar-dados', { method: 'POST' });
+    const data = await resp.json();
+    msg.className = 'status-msg ' + (data.ok ? 'sucesso' : 'erro');
+    msg.textContent = data.mensagem || data.erro || 'Erro';
+    if (data.ok) setTimeout(() => location.reload(), 1500);
+  } catch (err) {
+    msg.className = 'status-msg erro';
+    msg.textContent = 'Erro: ' + err.message;
+  }
+}
+
+document.querySelectorAll('.toggle-card').forEach(el => {
+  el.addEventListener('click', function() {
+    const tr = this.closest('.linha-serial');
+    const serial = tr.dataset.serial;
+    const detalhe = document.querySelector('.card-detalhe[data-serial="' + serial + '"]');
+    if (!detalhe) return;
+    const isVisible = detalhe.style.display !== 'none';
+    detalhe.style.display = isVisible ? 'none' : 'table-row';
+    tr.classList.toggle('aberta', !isVisible);
+    this.innerHTML = isVisible ? '&#9654;' : '&#9660;';
+  });
+});
+</script>
+
+<script>
+{% if resumo.modelos_ord %}
+new Chart(document.getElementById('chartModelos'), {
+  type: 'bar',
+  data: {
+    labels: [{% for m, c in resumo.modelos_ord %}'{{ m[:25]|e }}',{% endfor %}],
+    datasets: [{ label: 'Qtd', data: [{% for m, c in resumo.modelos_ord %}{{ c }},{% endfor %}], backgroundColor: '#2563eb', borderRadius: 4 }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+});
+{% endif %}
+{% if resumo.alertas_serial %}
+new Chart(document.getElementById('chartAlertas'), {
+  type: 'bar',
+  data: {
+    labels: [{% for l in resumo.alertas_serial %}'{{ l[:8]|e }}',{% endfor %}],
+    datasets: [{ label: 'Alertas', data: [{% for q in resumo.alertas_qtd %}{{ q }},{% endfor %}], backgroundColor: '#ef4444', borderRadius: 4 }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+});
+{% endif %}
+</script>
+</body>
+</html>

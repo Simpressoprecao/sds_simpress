@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troca Antecipada - SDS Simpress</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #f1f5f9; color: #0f172a; display: flex; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+        .sidebar { width: 200px; background: #fff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+        .sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid #e2e8f0; }
+        .sidebar-logo h2 { font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+        .sidebar-logo h2 .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: #2563eb; display: inline-block; }
+        .sidebar-logo span { font-size: 11px; color: #64748b; font-weight: 500; margin-top: 2px; display: block; padding-left: 16px; }
+        .sidebar .nav-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #94a3b8; padding: 16px 16px 6px; }
+        .sidebar a { display: flex; align-items: center; gap: 10px; padding: 8px 16px; margin: 0 8px; border-radius: 8px; color: #475569; text-decoration: none; font-size: 13px; font-weight: 500; transition:0.2s ease; }
+        .sidebar a:hover { background: #f1f5f9; color: #0f172a; }
+        .sidebar a.ativo { background: #eff6ff; color: #2563eb; font-weight: 600; }
+        .sidebar a .icone { font-size: 15px; width: 20px; text-align: center; }
+        .sidebar .nav-divider { border: none; border-top: 1px solid #e2e8f0; margin: 8px 12px; }
+        .sidebar .import-link { color: #f97316; }
+        .main { flex: 1; min-width: 0; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 28px; background: #fff; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 100; }
+        .topbar h1 { font-size: 18px; font-weight: 700; color: #0f172a; }
+        .topbar .badge { background: #f1f5f9; color: #64748b; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        .btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition:0.2s ease; text-decoration: none; border: none; font-family: inherit; }
+        .btn-outline { background: transparent; border: 1px solid #e2e8f0; color: #64748b; }
+        .btn-outline:hover { background: #f1f5f9; border-color: #cbd5e1; color: #0f172a; }
+        .btn-accent { background: #f97316; color: #fff; }
+        .btn-accent:hover { background: #ea580c; }
+        .content { padding: 20px 28px; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .card .num { font-size: 32px; font-weight: 700; color: #003366; }
+        .card .label { font-size: 13px; color: #888; margin-top: 4px; }
+        .card.orange .num { color: #ff6600; }
+        .card.red .num { color: #dc3545; }
+        .card.blue .num { color: #17a2b8; }
+        .graficos { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .grafico-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .grafico-card h3 { font-size: 14px; color: #555; margin-bottom: 12px; }
+        .grafico-card canvas { max-height: 220px; }
+        .filtros { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+        .filtros input, .filtros select { padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; outline: none; font-family: inherit; }
+        .filtros input:focus, .filtros select:focus { border-color: #ff6b00; box-shadow: 0 0 0 3px rgba(255,107,0,0.1); }
+        .filtros input { flex: 1; min-width: 200px; }
+        .tabela-wrap { background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; overflow: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #f8fafc; text-align: left; padding: 12px 14px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+        td { padding: 10px 14px; border-bottom: 1px solid #e2e8f0; }
+        tr:hover td { background: #f8f9fa; }
+        .toner-pct { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .toner-pct.alto { background: #d4edda; color: #155724; }
+        .toner-pct.medio { background: #fff3cd; color: #856404; }
+        .toner-pct.baixo { background: #f8d7da; color: #721c24; }
+        @media (max-width: 768px) { .sidebar { display: none; } .graficos { grid-template-columns: 1fr; } .content { padding: 16px; } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <h2><span class="logo-dot"></span> SDS Simpress</h2>
+            <span>Painel de Monitoramento</span>
+        </div>
+        <div class="nav-label">Principal</div>
+        <a href="/"><span class="icone">&#9632;</span> Dispositivos</a>
+        <a href="/os"><span class="icone">&#9997;</span> OS Chamados</a>
+        <a href="/troca" class="ativo"><span class="icone">&#8635;</span> Troca Antecipada</a>
+        <hr class="nav-divider">
+        <div class="nav-label">Utilit\u00e1rios</div>
+        <a href="/exportar-contadores"><span class="icone">&#8681;</span> Exportar Contadores</a>
+        <a href="#" onclick="importarDados(); return false;" class="import-link"><span class="icone">&#8634;</span> Importar Dados</a>
+        <hr class="nav-divider">
+        <div class="nav-label">Sistema</div>
+        <a href="/config-email"><span class="icone">&#9993;</span> Email</a>
+        <a href="/config-db"><span class="icone">&#9881;</span> Banco de Dados</a>
+    </div>
+    <div class="main">
+        <div class="topbar">
+            <h1>Troca Antecipada</h1>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <span class="badge">{{ resumo.total }} registros</span>
+                <a href="/relatorio-troca" class="btn btn-accent">Exportar Excel</a>
+            </div>
+        </div>
+        <div class="content">
+        <div class="cards">
+            <div class="card"><div class="num">{{ resumo.total }}</div><div class="label">Total de Trocas</div></div>
+            <div class="card red"><div class="num">{{ resumo.toner_baixo }}</div><div class="label">Toner &le; 20%</div></div>
+            <div class="card blue"><div class="num">{{ resumo.por_uf|length }}</div><div class="label">Estados (UF)</div></div>
+            <div class="card orange"><div class="num">{{ resumo.por_cor|length }}</div><div class="label">Cores de Toner</div></div>
+        </div>
+
+        <div class="graficos">
+            <div class="grafico-card">
+                <h3>Trocas por UF</h3>
+                <canvas id="chartUF"></canvas>
+            </div>
+            <div class="grafico-card">
+                <h3>Trocas por Cor do Toner</h3>
+                <canvas id="chartCor"></canvas>
+            </div>
+            <div class="grafico-card">
+                <h3>% Toner no Momento da Troca</h3>
+                <canvas id="chartTonerPct"></canvas>
+            </div>
+        </div>
+
+        <div class="filtros">
+            <input type="text" id="buscaTroca" placeholder="Buscar por serial, loja..." oninput="filtrar()">
+            <select id="filtroUF" onchange="filtrar()">
+                <option value="">Todos UFs</option>
+                {% for u in resumo.por_uf %}
+                <option value="{{ u.uf }}">{{ u.uf }}</option>
+                {% endfor %}
+            </select>
+            <select id="filtroModeloTroca" onchange="filtrar()">
+                <option value="">Todos Modelos</option>
+                {% for m in resumo.por_modelo %}
+                <option value="{{ m.nome }}">{{ m.nome }}</option>
+                {% endfor %}
+            </select>
+            <span id="contagem" style="font-size: 13px; color: #888;"></span>
+        </div>
+
+        <div class="tabela-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Loja</th><th>UF</th><th>Modelo</th><th>Serial</th>
+                        <th>% Toner</th><th>Cor</th><th>Data Atend.</th><th>Status</th><th>Contato</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaTroca">
+                    {% for d in dados %}
+                    {% set pct = d.percentual_toner|int if d.percentual_toner.isdigit() else 0 %}
+                    <tr>
+                        <td>{{ d.loja[:30] }}</td>
+                        <td><strong>{{ d.uf }}</strong></td>
+                        <td>{{ d.modelo }}</td>
+                        <td><a href="/detalhe-serial/{{ d.serial }}" style="color:#003366;font-weight:600;text-decoration:none;">{{ d.serial }}</a></td>
+                        <td>
+                            <span class="toner-pct {% if pct <= 20 %}baixo{% elif pct <= 50 %}medio{% else %}alto{% endif %}">
+                                {{ d.percentual_toner }}%
+                            </span>
+                        </td>
+                        <td>{{ d.cor_toner }}</td>
+                        <td>{{ d.data_atendimento[:10] }}</td>
+                        <td>{{ d.status }}</td>
+                        <td>{{ d.contato[:25] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        new Chart(document.getElementById('chartUF'), {
+            type: 'bar',
+            data: {
+                labels: [{% for u in resumo.por_uf %}'{{ u.uf }}'{% if not loop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Trocas',
+                    data: [{% for u in resumo.por_uf %}{{ u.total }}{% if not loop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: '#17a2b8',
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+
+        new Chart(document.getElementById('chartCor'), {
+            type: 'pie',
+            data: {
+                labels: [{% for c in resumo.por_cor %}'{{ c.cor }}'{% if not loop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    data: [{% for c in resumo.por_cor %}{{ c.total }}{% if not loop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: ['#003366', '#ff6600', '#28a745', '#dc3545', '#ffc107'],
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+
+        const pcts = [{% for d in dados %}{% if d.percentual_toner.isdigit() %}{{ d.percentual_toner }}{% if not loop.last %},{% endif %}{% endif %}{% endfor %}];
+        const bins = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+        const counts = new Array(bins.length - 1).fill(0);
+        pcts.forEach(p => { for (let i = 0; i < bins.length - 1; i++) { if (p >= bins[i] && p < bins[i+1]) { counts[i]++; break; } } });
+        new Chart(document.getElementById('chartTonerPct'), {
+            type: 'bar',
+            data: {
+                labels: ['0-10%','10-20%','20-30%','30-40%','40-50%','50-60%','60-70%','70-80%','80-90%','90-100%'],
+                datasets: [{
+                    label: 'Trocas',
+                    data: counts,
+                    backgroundColor: counts.map((v,i) => i < 2 ? '#dc3545' : i < 4 ? '#ffc107' : '#28a745'),
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+
+        function filtrar() {
+            const busca = document.getElementById('buscaTroca').value.toLowerCase();
+            const uf = document.getElementById('filtroUF').value.toLowerCase();
+            const modelo = document.getElementById('filtroModeloTroca').value.toLowerCase();
+            const tbody = document.getElementById('tabelaTroca');
+            let visiveis = 0;
+            tbody.querySelectorAll('tr').forEach(tr => {
+                const txt = tr.textContent.toLowerCase();
+                const ufTd = tr.cells[1].textContent.toLowerCase();
+                const moTd = tr.cells[2].textContent.toLowerCase();
+                const ok = (!busca || txt.includes(busca)) && (!uf || ufTd.includes(uf)) && (!modelo || moTd.includes(modelo));
+                tr.style.display = ok ? '' : 'none';
+                if (ok) visiveis++;
+            });
+            document.getElementById('contagem').textContent = visiveis + ' de {{ dados|length }} trocas';
+        }
+        filtrar();
+    </script>
+
+    <script>
+        async function importarDados() {
+            try {
+                const resp = await fetch('/importar-dados', { method: 'POST' });
+                const data = await resp.json();
+                if (data.ok) { alert(data.mensagem); location.reload(); }
+                else alert(data.erro || 'Erro');
+            } catch (err) { alert('Erro: ' + err.message); }
+        }
+    </script>
+</body>
+</html>
