@@ -182,7 +182,11 @@ class Database:
 
     def salvar_dispositivo(self, dados):
         disp = dados.get("dispositivo", {})
-        contagens = disp.get("contagens", {})
+        contagens_raw = dados.get("contagens", {})
+        contagens = (contagens_raw.get("contagens", {})
+                     if isinstance(contagens_raw, dict) else {})
+        if not contagens:
+            contagens = disp.get("contagens", {})
         id_sds = disp.get("id", "")
         serial = disp.get("N\u00famero de s\u00e9rie", "")
         modelo = disp.get("modelo", "")
@@ -299,10 +303,22 @@ class Database:
             rows = cur.fetchall()
             resultado = []
             for row in rows:
-                contagens = {
-                    "P\u00e1ginas monocrom\u00e1ticas": row.get("contador_pb", ""),
-                    "Colorido (equivalente A4)": row.get("contador_color", ""),
-                }
+                contagens = {}
+                pb_val = row.get("contador_pb", "")
+                color_val = row.get("contador_color", "")
+                if row.get("dados_json"):
+                    try:
+                        parsed = json.loads(row["dados_json"])
+                        item_contagens = parsed.get("contagens", {}).get("contagens", {})
+                        if isinstance(item_contagens, dict):
+                            contagens = item_contagens
+                        if not pb_val:
+                            pb_val = contagens.get("P\u00e1ginas monocrom\u00e1ticas",
+                                     contagens.get("Monocrom\u00e1tico (equivalente A4)", ""))
+                        if not color_val:
+                            color_val = contagens.get("Colorido (equivalente A4)", "")
+                    except (json.JSONDecodeError, TypeError):
+                        pass
                 disp = {
                     "N\u00famero de s\u00e9rie": row.get("serial", ""),
                     "modelo": row.get("modelo", ""),
@@ -326,8 +342,8 @@ class Database:
                     "serial": row.get("serial", ""),
                     "modelo": row.get("modelo", ""),
                     "cliente": row.get("cliente", ""),
-                    "contador_pb": row.get("contador_pb", ""),
-                    "contador_color": row.get("contador_color", ""),
+                    "contador_pb": pb_val,
+                    "contador_color": color_val,
                     "ultima_atualizacao": str(row.get("ultima_atualizacao", "")),
                 }
                 if row.get("dados_json"):

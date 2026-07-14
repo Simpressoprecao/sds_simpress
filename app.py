@@ -93,7 +93,11 @@ def index():
             raw = [raw]
         for d in raw:
             disp = d.get("dispositivo", {})
-            contagens = disp.get("contagens", {})
+            contagens_raw = d.get("contagens", {})
+            contagens = (contagens_raw.get("contagens", {})
+                         if isinstance(contagens_raw, dict) else {})
+            if not contagens:
+                contagens = disp.get("contagens", {})
             consum = d.get("consumiveis", {}).get("consumiveis", [])
             alertas = d.get("alertas", {}).get("frequencia_alertas", [])
             modelo = disp.get("modelo", "N/A")
@@ -520,6 +524,11 @@ def detalhe_serial(serial):
         for d in dados:
             disp = d.get("dispositivo", {})
             if disp.get("N\u00famero de s\u00e9rie", "").upper() == serial:
+                contagens_raw = d.get("contagens", {})
+                contagens = (contagens_raw.get("contagens", {})
+                             if isinstance(contagens_raw, dict) else {})
+                if not contagens:
+                    contagens = disp.get("contagens", {})
                 disp_info = {
                     "modelo": disp.get("modelo", ""),
                     "cliente": disp.get("breadcrumbs", [{}])[0].get("nome", "") if disp.get("breadcrumbs") else "",
@@ -527,7 +536,7 @@ def detalhe_serial(serial):
                     "ip": disp.get("Endere\u00e7o IP", ""),
                     "zona": disp.get("Zona", ""),
                     "ultima_atualizacao": disp.get("\u00daltima atualiza\u00e7\u00e3o", ""),
-                    "contagens": disp.get("contagens", {}),
+                    "contagens": contagens,
                     "consumiveis": d.get("consumiveis", {}).get("consumiveis", []),
                     "alertas_freq": d.get("alertas", {}).get("frequencia_alertas", []),
                     "alertas_anteriores": d.get("alertas", {}).get("alertas_anteriores", []),
@@ -645,7 +654,11 @@ def exportar_contadores():
             raw = [raw]
         for d in raw:
             disp = d.get("dispositivo", {})
-            contagens = disp.get("contagens", {})
+            contagens_raw = d.get("contagens", {})
+            contagens = (contagens_raw.get("contagens", {})
+                         if isinstance(contagens_raw, dict) else {})
+            if not contagens:
+                contagens = disp.get("contagens", {})
             serial = disp.get("N\u00famero de s\u00e9rie", "")
             local = disp.get("Localiza\u00e7\u00e3o", "")
             zona = disp.get("Zona", "")
