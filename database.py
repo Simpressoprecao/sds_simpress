@@ -280,15 +280,69 @@ class Database:
 
     def listar_dispositivos(self):
         con = self.conectar()
-        with con.cursor() as cur:
+        with con.cursor(pymysql.cursors.DictCursor) as cur:
             cur.execute("""
-                SELECT id, id_sds, serial, modelo, cliente, zona, localizacao,
-                       ip, contador_pb, contador_color, ultima_atualizacao,
-                       data_extracao
-                FROM dispositivos
-                ORDER BY cliente, serial
+                SELECT d.id, d.id_sds, d.serial, d.modelo, d.cliente, d.zona,
+                       d.localizacao, d.ip, d.hostname, d.mac, d.firmware,
+                       d.sku, d.contador_pb, d.contador_color,
+                       d.ultima_atualizacao, d.data_extracao,
+                       d.dados_json,
+                       COALESCE(a.total_alertas, 0) AS total_alertas
+                FROM dispositivos d
+                LEFT JOIN (
+                    SELECT dispositivo_id, COUNT(*) AS total_alertas
+                    FROM alertas
+                    GROUP BY dispositivo_id
+                ) a ON a.dispositivo_id = d.id
+                ORDER BY d.cliente, d.serial
             """)
-            return cur.fetchall()
+            rows = cur.fetchall()
+            resultado = []
+            for row in rows:
+                contagens = {
+                    "P\u00e1ginas monocrom\u00e1ticas": row.get("contador_pb", ""),
+                    "Colorido (equivalente A4)": row.get("contador_color", ""),
+                }
+                disp = {
+                    "N\u00famero de s\u00e9rie": row.get("serial", ""),
+                    "modelo": row.get("modelo", ""),
+                    "Endere\u00e7o IP": row.get("ip", ""),
+                    "Localiza\u00e7\u00e3o": row.get("localizacao", ""),
+                    "Zona": row.get("zona", ""),
+                    "hostname": row.get("hostname", ""),
+                    "\u00daltima atualiza\u00e7\u00e3o": str(row.get("ultima_atualizacao", "")),
+                    "cliente": row.get("cliente", ""),
+                    "Endere\u00e7o MAC": row.get("mac", ""),
+                    "Firmware": row.get("firmware", ""),
+                    "Vers\u00e3o do firmware": row.get("firmware", ""),
+                    "SKU": row.get("sku", ""),
+                    "breadcrumbs": [{"nome": row.get("cliente", ""), "nivel": "customers"}],
+                    "contagens": contagens,
+                }
+                item = {
+                    "dispositivo": disp,
+                    "contagens": contagens,
+                    "total_alertas": row.get("total_alertas", 0),
+                    "serial": row.get("serial", ""),
+                    "modelo": row.get("modelo", ""),
+                    "cliente": row.get("cliente", ""),
+                    "contador_pb": row.get("contador_pb", ""),
+                    "contador_color": row.get("contador_color", ""),
+                    "ultima_atualizacao": str(row.get("ultima_atualizacao", "")),
+                }
+                if row.get("dados_json"):
+                    try:
+                        parsed = json.loads(row["dados_json"])
+                        item["consumiveis"] = parsed.get("consumiveis", {})
+                        item["alertas"] = parsed.get("alertas", {})
+                    except (json.JSONDecodeError, TypeError):
+                        item["consumiveis"] = {}
+                        item["alertas"] = {}
+                else:
+                    item["consumiveis"] = {}
+                    item["alertas"] = {}
+                resultado.append(item)
+            return resultado
 
     def buscar_dispositivo(self, termo):
         con = self.conectar()

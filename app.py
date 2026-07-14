@@ -65,6 +65,27 @@ def index():
 
     db_dados = listar_dispositivos_db()
     if db_dados:
+        for d in db_dados:
+            modelo = d.get("modelo", "N/A")
+            resumo["modelos"][modelo] = resumo["modelos"].get(modelo, 0) + 1
+            pb = str(d.get("contador_pb", "0"))
+            color = str(d.get("contador_color", "0"))
+            try:
+                resumo["pb_total"] += int(pb) if pb and pb.isdigit() else 0
+                resumo["color_total"] += int(color) if color and color.isdigit() else 0
+            except:
+                pass
+            consum = d.get("consumiveis", {}).get("consumiveis", [])
+            for c in consum:
+                nv = c.get("nivel", "0%").replace("%", "")
+                if nv.isdigit() and int(nv) <= 20:
+                    resumo["toner_baixo"] += 1
+                    break
+            qtd_alertas = int(d.get("total_alertas", 0))
+            if qtd_alertas > 0:
+                resumo["alertas_serial"].append(d.get("serial", "?")[:12])
+                resumo["alertas_qtd"].append(qtd_alertas)
+            resumo["total"] += 1
         dados = db_dados
     elif os.path.exists(ARQUIVO_DADOS):
         raw = carregar_json(ARQUIVO_DADOS)
