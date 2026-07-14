@@ -766,17 +766,23 @@ def salvar_os():
     data = request.json
     from importar_planilhas import carregar_os
     lista = carregar_os()
+    campos = ["numero_os","serial","modelo","cep","localidade","abertura","previsao","finalizado","descricao","observacao","status","ocorrencia"]
+    encontrado = False
     for i, item in enumerate(lista):
         if item.get("numero_os") == data.get("numero_os"):
-            for k, v in data.items():
-                if k in item or k == "numero_os":
-                    lista[i][k] = str(v)
+            for k in campos:
+                if k in data:
+                    lista[i][k] = str(data[k])
+            encontrado = True
             break
+    if not encontrado:
+        novo = {k: str(data.get(k, "")) for k in campos}
+        lista.append(novo)
     from importar_planilhas import ARQUIVO_OS
     import json
     with open(ARQUIVO_OS, "w", encoding="utf-8") as f:
         json.dump(lista, f, ensure_ascii=False, indent=2)
-    return jsonify({"ok": True})
+    return jsonify({"ok": True, "novo": not encontrado})
 
 
 @app.route("/api/salvar-troca", methods=["POST"])
@@ -784,17 +790,23 @@ def salvar_troca():
     data = request.json
     from importar_planilhas import carregar_troca
     lista = carregar_troca()
+    campos = ["loja","cep","uf","modelo","serial","data_leitura","percentual_toner","cor_toner","ip","data_atendimento","descricao","status","data_finalizacao","email","contato","retorno_acao","retorno"]
+    encontrado = False
     for i, item in enumerate(lista):
         if item.get("serial") == data.get("serial") and item.get("data_atendimento") == data.get("data_atendimento"):
-            for k, v in data.items():
-                if k in item or k == "serial":
-                    lista[i][k] = str(v)
+            for k in campos:
+                if k in data:
+                    lista[i][k] = str(data[k])
+            encontrado = True
             break
+    if not encontrado:
+        novo = {k: str(data.get(k, "")) for k in campos}
+        lista.append(novo)
     from importar_planilhas import ARQUIVO_TROCA
     import json
     with open(ARQUIVO_TROCA, "w", encoding="utf-8") as f:
         json.dump(lista, f, ensure_ascii=False, indent=2)
-    return jsonify({"ok": True})
+    return jsonify({"ok": True, "novo": not encontrado})
 
 
 if __name__ == "__main__":
