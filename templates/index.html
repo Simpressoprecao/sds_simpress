@@ -509,12 +509,13 @@ document.querySelectorAll('.tabela-wrap th').forEach((th, idx) => {
   th.title = 'Clique para filtrar por esta coluna';
   th.addEventListener('click', function(e) {
     e.stopPropagation();
-    const colIdx = idx;
-    if (filtros[colIdx]) {
-      delete filtros[colIdx];
+    if (filtros[idx]) {
+      delete filtros[idx];
       aplicarFiltros();
       return;
     }
+    document.querySelectorAll('.filter-dropdown').forEach(d => d.remove());
+    const colIdx = idx;
     const valores = new Set();
     document.querySelectorAll('.linha-serial').forEach(row => {
       const cell = row.querySelectorAll('td')[colIdx];
@@ -525,6 +526,7 @@ document.querySelectorAll('.tabela-wrap th').forEach((th, idx) => {
     });
     const sorted = [...valores].sort((a,b) => a.localeCompare(b, 'pt-BR', {numeric:true}));
     const dropdown = document.createElement('div');
+    dropdown.className = 'filter-dropdown';
     dropdown.style.cssText = 'position:fixed;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.12);max-height:260px;overflow-y:auto;z-index:2000;min-width:160px;padding:4px;';
     const rect = this.getBoundingClientRect();
     dropdown.style.left = Math.min(rect.left, window.innerWidth - 200) + 'px';
@@ -565,9 +567,16 @@ document.querySelectorAll('.tabela-wrap th').forEach((th, idx) => {
     inp.addEventListener('input', () => renderList(inp.value));
     renderList('');
 
-    document.addEventListener('click', function rem(e) { if (!dropdown.contains(e.target) && e.target !== th) { dropdown.remove(); document.removeEventListener('click', rem); } });
-
     document.body.appendChild(dropdown);
+
+    setTimeout(() => {
+      document.addEventListener('click', function fechar(e) {
+        if (!dropdown.contains(e.target)) {
+          dropdown.remove();
+          document.removeEventListener('click', fechar);
+        }
+      });
+    }, 0);
   });
 });
 
