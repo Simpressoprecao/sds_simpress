@@ -106,7 +106,11 @@ body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: v
 .tabela-wrap { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: auto; }
 .tabela-wrap table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .tabela-wrap thead { position: sticky; top: 0; z-index: 5; }
-.tabela-wrap th { background: #f1f5f9; padding: 11px 12px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: #334155; border-bottom: 2px solid #cbd5e1; white-space: nowrap; text-align: left; }
+.tabela-wrap th { background: #f1f5f9; padding: 11px 12px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: #334155; border-bottom: 2px solid #cbd5e1; white-space: nowrap; text-align: left; cursor:pointer; user-select:none; }
+.tabela-wrap th .seta { font-size:8px;margin-left:4px;color:#94a3b8;transition:0.15s; }
+.tabela-wrap th.filtrado .seta { color:#4338ca; transform:rotate(180deg); display:inline-block; }
+.tabela-wrap th:hover .seta { color:#64748b; }
+.tabela-wrap th.filtrado { color:#4338ca; }
 .tabela-wrap td { padding: 10px 12px; border-bottom: 1px solid #e8ecf3; color: var(--text); font-size: 13px; }
 .tabela-wrap tbody tr:last-child td { border-bottom: none; }
 .tabela-wrap tbody tr:hover td { background: #f8fafc; }
@@ -259,16 +263,16 @@ body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: v
         <thead>
           <tr>
             <th style="width:24px;"></th>
-            <th>Serial</th>
-            <th>Modelo</th>
-            <th>Cliente</th>
-            <th>IP</th>
-            <th>Local</th>
-            <th>Zona</th>
-            <th>PB</th>
-            <th>Color</th>
-            <th>Atualização</th>
-            <th>Alertas</th>
+            <th>Serial<span class="seta">▼</span></th>
+            <th>Modelo<span class="seta">▼</span></th>
+            <th>Cliente<span class="seta">▼</span></th>
+            <th>IP<span class="seta">▼</span></th>
+            <th>Local<span class="seta">▼</span></th>
+            <th>Zona<span class="seta">▼</span></th>
+            <th>PB<span class="seta">▼</span></th>
+            <th>Color<span class="seta">▼</span></th>
+            <th>Atualização<span class="seta">▼</span></th>
+            <th>Alertas<span class="seta">▼</span></th>
           </tr>
         </thead>
         <tbody>
@@ -450,6 +454,11 @@ function aplicarFiltros() {
   const rows = document.querySelectorAll('.linha-serial');
   const busca = searchInput.value.toLowerCase().trim();
 
+  document.querySelectorAll('.tabela-wrap th').forEach((th, i) => {
+    if (i === 0) return;
+    th.classList.toggle('filtrado', !!filtros[i]);
+  });
+
   rows.forEach(row => {
     let show = true;
 
@@ -504,8 +513,6 @@ function atualizarPills() {
 /* Filtro por coluna - clicar no header */
 document.querySelectorAll('.tabela-wrap th').forEach((th, idx) => {
   if (idx === 0) return; // coluna toggle
-  th.style.cursor = 'pointer';
-  th.style.userSelect = 'none';
   th.title = 'Clique para filtrar por esta coluna';
   th.addEventListener('click', function(e) {
     e.stopPropagation();
