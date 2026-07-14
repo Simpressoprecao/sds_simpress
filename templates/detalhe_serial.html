@@ -276,7 +276,12 @@
                             <td contenteditable="true" data-campo="finalizado">{{ item.finalizado[:10] }}</td>
                             <td contenteditable="true" data-campo="descricao">{{ item.descricao[:35] }}</td>
                             <td contenteditable="true" data-campo="observacao">{{ item.observacao[:35] }}</td>
-                            <td contenteditable="true" data-campo="status">{{ item.status }}</td>
+                            <td data-campo="status">
+                                <select style="padding:4px 8px;border:1px solid #d0d8e5;border-radius:6px;font-size:12px;font-family:inherit;outline:none;background:#fff;cursor:pointer;" onchange="this.closest('tr').dataset.dirty='1'">
+                                    <option value="Aberta" {% if item.status == 'Aberta' %}selected{% endif %}>Aberta</option>
+                                    <option value="Finalizada" {% if item.status == 'Finalizada' %}selected{% endif %}>Finalizada</option>
+                                </select>
+                            </td>
                             <td contenteditable="true" data-campo="ocorrencia">{{ item.ocorrencia[:35] }}</td>
                         </tr>
                         {% endfor %}
@@ -317,7 +322,13 @@
                             <td>{{ item.data_leitura[:10] }}</td>
                             <td><strong>{{ item.data_atendimento[:10] }}</strong></td>
                             <td contenteditable="true" data-campo="descricao">{{ item.descricao[:35] }}</td>
-                            <td contenteditable="true" data-campo="status">{{ item.status }}</td>
+                            <td data-campo="status">
+                                <select style="padding:4px 8px;border:1px solid #d0d8e5;border-radius:6px;font-size:12px;font-family:inherit;outline:none;background:#fff;cursor:pointer;" onchange="this.closest('tr').dataset.dirty='1'">
+                                    <option value="Pendente" {% if item.status == 'Pendente' %}selected{% endif %}>Pendente</option>
+                                    <option value="Realizada" {% if item.status == 'Realizada' %}selected{% endif %}>Realizada</option>
+                                    <option value="Cancelada" {% if item.status == 'Cancelada' %}selected{% endif %}>Cancelada</option>
+                                </select>
+                            </td>
                             <td contenteditable="true" data-campo="retorno">{{ item.retorno[:25] }}</td>
                         </tr>
                         {% endfor %}
@@ -341,6 +352,9 @@
                 tr.querySelectorAll('[contenteditable]').forEach(td => {
                     dados[td.dataset.campo] = td.textContent.trim();
                 });
+                tr.querySelectorAll('select[data-campo]').forEach(sel => {
+                    dados[sel.dataset.campo] = sel.value;
+                });
                 const resp = await fetch('/api/salvar-os', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -358,6 +372,9 @@
                 const dados = { serial: tr.dataset.serial, data_atendimento: tr.dataset.data };
                 tr.querySelectorAll('[contenteditable]').forEach(td => {
                     dados[td.dataset.campo] = td.textContent.trim();
+                });
+                tr.querySelectorAll('select[data-campo]').forEach(sel => {
+                    dados[sel.dataset.campo] = sel.value;
                 });
                 const resp = await fetch('/api/salvar-troca', {
                     method: 'POST',
