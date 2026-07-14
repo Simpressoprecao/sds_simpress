@@ -193,8 +193,8 @@ body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: v
       <span class="count-badge">{{ resumo.total }} ativos</span>
     </div>
     <div class="topbar-acoes">
-      <form class="search-box" id="buscaForm">
-        <input type="text" id="serialInput" placeholder="Buscar serial ou ID..." autofocus>
+      <form class="search-box" id="buscaForm" onsubmit="event.preventDefault();aplicarFiltros();">
+        <input type="text" id="serialInput" placeholder="Filtrar por qualquer campo..." autofocus>
         <button type="submit">Ir</button>
       </form>
       <button class="btn btn-primary" onclick="abrirModalBuscarEnviar()">Buscar e Enviar</button>
@@ -388,6 +388,10 @@ body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: v
   </div>
 </div>
 
+<div id="filtersBar" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;margin-bottom:14px;box-shadow:var(--shadow);">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;" id="filtersPills"></div>
+</div>
+
 <div class="modal" id="modalBuscarEnviar">
   <div class="modal-content">
     <h2>Buscar e Enviar</h2>
@@ -437,37 +441,137 @@ document.getElementById('modalBuscarEnviar').addEventListener('click', function(
   if (e.target === this) fecharModalBuscarEnviar();
 });
 
-document.getElementById('buscaForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const serial = document.getElementById('serialInput').value.trim();
-  if (!serial) return;
-  const msg = document.getElementById('statusMsg');
-  const grid = document.getElementById('dispositivosGrid');
-  const loading = document.getElementById('loading');
-  msg.style.display = 'none'; msg.className = 'status-msg';
-  grid.innerHTML = ''; loading.style.display = 'block';
-  try {
-    const resp = await fetch('/buscar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'serial=' + encodeURIComponent(serial)
-    });
-    const dados = await resp.json();
-    loading.style.display = 'none';
-    if (resp.ok) {
-      msg.className = 'status-msg sucesso';
-      msg.textContent = 'Dispositivo encontrado! Atualizando...';
-      location.reload();
-    } else {
-      msg.className = 'status-msg erro';
-      msg.textContent = dados.erro || 'Erro ao buscar';
+/* ─── Filtros locais ─── */
+const searchInput = document.getElementById('serialInput');
+const tabela = document.querySelector('.tabela-wrap');
+let filtros = {};
+
+function aplicarFiltros() {
+  const rows = document.querySelectorAll('.linha-serial');
+  const busca = searchInput.value.toLowerCase().trim();
+
+  rows.forEach(row => {
+    let show = true;
+
+    if (busca) {
+      const cells = row.querySelectorAll('td');
+      let match = false;
+      cells.forEach(c => { if (c.textContent.toLowerCase().includes(busca)) match = true; });
+      if (!match) show = false;
     }
-  } catch (err) {
-    loading.style.display = 'none';
-    msg.className = 'status-msg erro';
-    msg.textContent = 'Erro: ' + err.message;
+
+    for (const [colIdx, val] of Object.entries(filtros)) {
+      const cell = row.querySelectorAll('td')[parseInt(colIdx)];
+      if (!cell || cell.textContent.trim() !== val) { show = false; break; }
+    }
+
+    row.style.display = show ? '' : 'none';
+    const detalhe = document.querySelector('.card-detalhe[data-serial="' + row.dataset.serial + '"]');
+    if (detalhe) detalhe.style.display = 'none';
+    const toggle = row.querySelector('.toggle-card');
+    if (toggle) toggle.innerHTML = '▶';
+    if (detalhe) row.classList.remove('aberta');
+  });
+
+  atualizarPills();
+}
+
+function atualizarPills() {
+  const bar = document.getElementById('filtersBar');
+  const pills = document.getElementById('filtersPills');
+  pills.innerHTML = '';
+  const nomes = ['', 'Serial', 'Modelo', 'Cliente', 'IP', 'Local', 'Zona', 'PB', 'Color', 'Atualização', 'Alertas'];
+  let count = 0;
+
+  for (const [colIdx, val] of Object.entries(filtros)) {
+    count++;
+    const pill = document.createElement('span');
+    pill.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:20px;font-size:12px;color:#4338ca;font-weight:500;';
+    pill.innerHTML = nomes[colIdx] + ': <strong>' + val + '</strong> <span style="cursor:pointer;margin-left:2px;font-size:14px;line-height:1;" data-remove="' + colIdx + '">&times;</span>';
+    pills.appendChild(pill);
   }
+
+  bar.style.display = count > 0 ? 'block' : 'none';
+
+  pills.querySelectorAll('[data-remove]').forEach(el => {
+    el.addEventListener('click', function() {
+      delete filtros[this.dataset.remove];
+      aplicarFiltros();
+    });
+  });
+}
+
+/* Filtro por coluna - clicar no header */
+document.querySelectorAll('.tabela-wrap th').forEach((th, idx) => {
+  if (idx === 0) return; // coluna toggle
+  th.style.cursor = 'pointer';
+  th.style.userSelect = 'none';
+  th.title = 'Clique para filtrar por esta coluna';
+  th.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const colIdx = idx;
+    if (filtros[colIdx]) {
+      delete filtros[colIdx];
+      aplicarFiltros();
+      return;
+    }
+    const valores = new Set();
+    document.querySelectorAll('.linha-serial').forEach(row => {
+      const cell = row.querySelectorAll('td')[colIdx];
+      if (cell) {
+        const v = cell.textContent.trim();
+        if (v) valores.add(v);
+      }
+    });
+    const sorted = [...valores].sort((a,b) => a.localeCompare(b, 'pt-BR', {numeric:true}));
+    const dropdown = document.createElement('div');
+    dropdown.style.cssText = 'position:fixed;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.12);max-height:260px;overflow-y:auto;z-index:2000;min-width:160px;padding:4px;';
+    const rect = this.getBoundingClientRect();
+    dropdown.style.left = Math.min(rect.left, window.innerWidth - 200) + 'px';
+    dropdown.style.top = (rect.bottom + 4) + 'px';
+
+    const inp = document.createElement('input');
+    inp.placeholder = 'Filtrar valores...';
+    inp.style.cssText = 'width:calc(100% - 8px);margin:4px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;';
+    dropdown.appendChild(inp);
+
+    const list = document.createElement('div');
+    list.style.cssText = 'max-height:180px;overflow-y:auto;';
+    dropdown.appendChild(list);
+
+    function renderList(filter) {
+      list.innerHTML = '';
+      sorted.filter(v => !filter || v.toLowerCase().includes(filter.toLowerCase())).forEach(v => {
+        const item = document.createElement('div');
+        item.style.cssText = 'padding:6px 10px;font-size:12px;cursor:pointer;border-radius:4px;transition:0.1s;';
+        item.textContent = v;
+        item.addEventListener('mouseenter', () => item.style.background = '#f1f5f9');
+        item.addEventListener('mouseleave', () => item.style.background = '');
+        item.addEventListener('click', function() {
+          filtros[colIdx] = v;
+          aplicarFiltros();
+          dropdown.remove();
+        });
+        list.appendChild(item);
+      });
+      if (!list.children.length) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'padding:8px 10px;font-size:12px;color:#999;';
+        empty.textContent = 'Nenhum valor';
+        list.appendChild(empty);
+      }
+    }
+
+    inp.addEventListener('input', () => renderList(inp.value));
+    renderList('');
+
+    document.addEventListener('click', function rem(e) { if (!dropdown.contains(e.target) && e.target !== th) { dropdown.remove(); document.removeEventListener('click', rem); } });
+
+    document.body.appendChild(dropdown);
+  });
 });
+
+searchInput.addEventListener('input', aplicarFiltros);
 
 async function varrerTodos() {
   const btn = document.getElementById('btnVarrer');
