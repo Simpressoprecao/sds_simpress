@@ -358,33 +358,9 @@ class SDSScraper:
         }
 
     def buscar_por_serial(self, serial):
-        url = f"{BASE_URL}/PortalWeb/search/devices"
+        url = f"{BASE_URL}/PortalWeb/search?q={serial}&s=devices"
         r = self._get(url)
         sopa = BeautifulSoup(r.text, "html.parser")
-
-        form = sopa.find("form")
-        action = form.get("action") if form else None
-        post_url = urljoin(url, action) if action else url
-
-        csrf = self._csrf_token(r.text)
-        dados_form = [("q", serial)]
-        if form:
-            for inp in form.find_all("input"):
-                name = inp.get("name")
-                value = inp.get("value", "")
-                if name and name != "q":
-                    dados_form.append((name, value))
-        if csrf:
-            dados_form.append(("_csrf", csrf))
-
-        r2 = self.session.post(
-            post_url,
-            data=dados_form,
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-            allow_redirects=True,
-            timeout=30,
-        )
-        sopa = BeautifulSoup(r2.text, "html.parser")
 
         for a in sopa.select("a[href*='/devices/']"):
             href = a.get("href", "")
