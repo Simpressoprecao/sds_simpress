@@ -59,6 +59,12 @@ def gerar_excel(dados_lista, caminho="relatorio_contadores.xlsx"):
     for dados in dados_lista:
         disp = dados.get("dispositivo", {})
         contagens = disp.get("contagens", {})
+        if not contagens:
+            contagens_raw = dados.get("contagens", {})
+            contagens = (contagens_raw.get("contagens", {})
+                         if isinstance(contagens_raw, dict) else {})
+            if not contagens:
+                contagens = disp.get("contagens", {})
         data_leitura = disp.get("\u00daltima atualiza\u00e7\u00e3o", "")
 
         mes = ano = ""
