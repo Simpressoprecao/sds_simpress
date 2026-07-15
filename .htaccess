@@ -1,4 +1,0 @@
-PassengerEnabled On
-# Altere [SEU_USUARIO] pelo usuario do cPanel
-PassengerAppRoot /home/[SEU_USUARIO]/public_html
-PassengerPython /home/[SEU_USUARIO]/virtualenv/venv/bin/python
