@@ -7,6 +7,8 @@ from sds_scraper import SDSScraper, salvar_json, carregar_json
 from relatorios import gerar_excel, carregar_config, salvar_config, enviar_email, MENSAGEM_PADRAO
 from database import Database, carregar_config_db, salvar_config_db
 from importar_planilhas import carregar_os, carregar_troca, obter_resumo_os, obter_resumo_troca, adicionar_observacao, obter_observacoes, carregar_observacoes
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 
 app = Flask(__name__)
 ARQUIVO_DADOS = "dados_dispositivo.json"
@@ -708,12 +710,24 @@ def exportar_contadores():
 @app.route("/relatorio-serial/<serial>")
 def relatorio_serial(serial):
     serial = serial.upper()
-    from relatorios import gerar_excel
     dados_os = [d for d in carregar_os() if d.get("serial", "").upper() == serial]
     dados_troca = [d for d in carregar_troca() if d.get("serial", "").upper() == serial]
     observacoes = obter_observacoes(serial)
 
-    dados_excel = []
+    estilo_titulo = Font(bold=True, color="FFFFFF", size=11)
+    fill_titulo = PatternFill(start_color="003366", end_color="003366", fill_type="solid")
+    borda = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+
+    wb = Workbook()
+
+    # --- Sheet 1: Dados do Dispositivo ---
+    ws1 = wb.active
+    ws1.title = "Dispositivo"
+    cab1 = ["N\u00famero de s\u00e9rie", "Modelo", "Localiza\u00e7\u00e3o",
+            "Contador PB", "Contador Color", "Data Leitura"]
+    for col, tit in enumerate(cab1, 1):
+        c = ws1.cell(row=1, column=col, value=tit)
+        c.font = estilo_titulo; c.fill = fill_titulo; c.alignment = Alignment(horizontal='center'); c.border = borda
 
     if os.path.exists(ARQUIVO_DADOS):
         dados_sds = carregar_json(ARQUIVO_DADOS)
@@ -727,61 +741,71 @@ def relatorio_serial(serial):
                              if isinstance(contagens_raw, dict) else {})
                 if not contagens:
                     contagens = disp.get("contagens", {})
-                dados_excel.append({
-                    "dispositivo": {
-                        "N\u00famero de s\u00e9rie": serial,
-                        "modelo": disp.get("modelo", ""),
-                        "breadcrumbs": [{"nome": disp.get("Localiza\u00e7\u00e3o", "")}],
-                        "Localiza\u00e7\u00e3o": disp.get("Localiza\u00e7\u00e3o", ""),
-                        "\u00daltima atualiza\u00e7\u00e3o": disp.get("\u00daltima atualiza\u00e7\u00e3o", ""),
-                        "contagens": contagens
-                    }
-                })
+                pb = contagens.get("P\u00e1ginas monocrom\u00e1ticas",
+                     contagens.get("Monocrom\u00e1tico (equivalente A4)", ""))
+                color = contagens.get("Colorido (equivalente A4)", "")
+                data_leitura = disp.get("\u00daltima atualiza\u00e7\u00e3o", "")
+                vals = [serial, disp.get("modelo", ""), disp.get("Localiza\u00e7\u00e3o", ""),
+                        pb, color, data_leitura[:16]]
+                for col, v in enumerate(vals, 1):
+                    c = ws1.cell(row=2, column=col, value=v)
+                    c.alignment = Alignment(horizontal='center'); c.border = borda
                 break
-    for item in dados_os:
-        dados_excel.append({
-            "dispositivo": {
-                "N\u00famero de s\u00e9rie": serial,
-                "modelo": "OS",
-                "breadcrumbs": [{"nome": item.get("localidade", "")}],
-                "Localiza\u00e7\u00e3o": item.get("localidade", ""),
-                "\u00daltima atualiza\u00e7\u00e3o": item.get("abertura", ""),
-                "contagens": {
-                    "N\u00ba OS": item.get("numero_os", ""),
-                    "Descri\u00e7\u00e3o": item.get("descricao", ""),
-                    "Status": item.get("status", ""),
-                    "Observa\u00e7\u00e3o": item.get("observacao", ""),
-                }
-            }
-        })
-    for item in dados_troca:
-        dados_excel.append({
-            "dispositivo": {
-                "N\u00famero de s\u00e9rie": serial,
-                "modelo": "Troca",
-                "breadcrumbs": [{"nome": item.get("loja", "")}],
-                "Localiza\u00e7\u00e3o": item.get("loja", ""),
-                "\u00daltima atualiza\u00e7\u00e3o": item.get("data_atendimento", ""),
-                "contagens": {
-                }
-            }
-        })
+    for col, w in enumerate([22, 35, 30, 15, 15, 20], 1):
+        ws1.column_dimensions[chr(64+col)].width = w
 
-    obs_texto = "\n".join([f"[{o['data']}] {o['texto']}" for o in observacoes])
-    if obs_texto:
-        dados_excel.append({
-            "dispositivo": {
-                "N\u00famero de s\u00e9rie": serial,
-                "modelo": "Observa\u00e7\u00f5es",
-                "breadcrumbs": [{"nome": ""}],
-                "Localiza\u00e7\u00e3o": "",
-                "\u00daltima atualiza\u00e7\u00e3o": "",
-                "contagens": {"Observa\u00e7\u00f5es": obs_texto}
-            }
-        })
+    # --- Sheet 2: OS e Trocas ---
+    ws2 = wb.create_sheet("OS e Trocas")
+
+    if dados_os:
+        cab2 = ["N\u00ba OS", "Modelo", "Localidade", "Abertura", "Previs\u00e3o",
+                "Finalizado", "Descri\u00e7\u00e3o", "Status", "Observa\u00e7\u00e3o", "Ocorr\u00eancia"]
+        for col, tit in enumerate(cab2, 1):
+            c = ws2.cell(row=1, column=col, value=tit)
+            c.font = estilo_titulo; c.fill = fill_titulo; c.alignment = Alignment(horizontal='center'); c.border = borda
+        for i, item in enumerate(dados_os, 2):
+            vals = [item.get("numero_os", ""), item.get("modelo", ""), item.get("localidade", ""),
+                    item.get("abertura", "")[:10], item.get("previsao", "")[:10],
+                    item.get("finalizado", "")[:10], item.get("descricao", ""),
+                    item.get("status", ""), item.get("observacao", ""), item.get("ocorrencia", "")]
+            for col, v in enumerate(vals, 1):
+                c = ws2.cell(row=i, column=col, value=v)
+                c.alignment = Alignment(horizontal='center'); c.border = borda
+        for col, w in enumerate([14, 28, 28, 14, 14, 18, 40, 14, 40, 40], 1):
+            ws2.column_dimensions[chr(64+col)].width = w
+
+    if dados_troca:
+        inicio = len(dados_os) + 3
+        ws2.cell(row=inicio, column=1, value="TROCA ANTECIPADA").font = Font(bold=True, size=12, color="003366")
+        cab3 = ["Loja", "UF", "Modelo", "% Toner", "Cor", "Data Leitura",
+                "Data Atend.", "Descri\u00e7\u00e3o", "Status", "Retorno"]
+        r = inicio + 1
+        for col, tit in enumerate(cab3, 1):
+            c = ws2.cell(row=r, column=col, value=tit)
+            c.font = estilo_titulo; c.fill = fill_titulo; c.alignment = Alignment(horizontal='center'); c.border = borda
+        for i, item in enumerate(dados_troca, r + 1):
+            vals = [item.get("loja", "")[:25], item.get("uf", ""), item.get("modelo", ""),
+                    item.get("percentual_toner", ""), item.get("cor_toner", ""),
+                    item.get("data_leitura", "")[:10], item.get("data_atendimento", "")[:10],
+                    item.get("descricao", ""), item.get("status", ""), item.get("retorno", "")]
+            for col, v in enumerate(vals, 1):
+                c = ws2.cell(row=i, column=col, value=v)
+                c.alignment = Alignment(horizontal='center'); c.border = borda
+
+    if observacoes:
+        inicio_obs = len(dados_os) + len(dados_troca) + 5
+        ws2.cell(row=inicio_obs, column=1, value="OBSERVA\u00c7\u00d5ES").font = Font(bold=True, size=12, color="003366")
+        for col, tit in enumerate(["Data", "Texto"], 1):
+            c = ws2.cell(row=inicio_obs + 1, column=col, value=tit)
+            c.font = estilo_titulo; c.fill = fill_titulo; c.alignment = Alignment(horizontal='center'); c.border = borda
+        for i, obs in enumerate(observacoes, inicio_obs + 2):
+            c1 = ws2.cell(row=i, column=1, value=obs.get("data", ""))
+            c1.alignment = Alignment(horizontal='center'); c1.border = borda
+            c2 = ws2.cell(row=i, column=2, value=obs.get("texto", ""))
+            c2.alignment = Alignment(horizontal='center'); c2.border = borda
 
     caminho = f"relatorio_{serial}.xlsx"
-    gerar_excel(dados_excel, caminho)
+    wb.save(caminho)
     return send_file(caminho, as_attachment=True, download_name=f"relatorio_{serial}.xlsx")
 
 
