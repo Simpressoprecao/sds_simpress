@@ -714,6 +714,30 @@ def relatorio_serial(serial):
     observacoes = obter_observacoes(serial)
 
     dados_excel = []
+
+    if os.path.exists(ARQUIVO_DADOS):
+        dados_sds = carregar_json(ARQUIVO_DADOS)
+        if not isinstance(dados_sds, list):
+            dados_sds = [dados_sds]
+        for d in dados_sds:
+            disp = d.get("dispositivo", {})
+            if disp.get("N\u00famero de s\u00e9rie", "").upper() == serial:
+                contagens_raw = d.get("contagens", {})
+                contagens = (contagens_raw.get("contagens", {})
+                             if isinstance(contagens_raw, dict) else {})
+                if not contagens:
+                    contagens = disp.get("contagens", {})
+                dados_excel.append({
+                    "dispositivo": {
+                        "N\u00famero de s\u00e9rie": serial,
+                        "modelo": disp.get("modelo", ""),
+                        "breadcrumbs": [{"nome": disp.get("Localiza\u00e7\u00e3o", "")}],
+                        "Localiza\u00e7\u00e3o": disp.get("Localiza\u00e7\u00e3o", ""),
+                        "\u00daltima atualiza\u00e7\u00e3o": disp.get("\u00daltima atualiza\u00e7\u00e3o", ""),
+                        "contagens": contagens
+                    }
+                })
+                break
     for item in dados_os:
         dados_excel.append({
             "dispositivo": {

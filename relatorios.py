@@ -69,7 +69,7 @@ def gerar_excel(dados_lista, caminho="relatorio_contadores.xlsx"):
 
         mes = ano = ""
         if data_leitura:
-            for fmt in ["%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%d/%m/%Y"]:
+            for fmt in ["%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%d/%m/%Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"]:
                 try:
                     dt = datetime.strptime(data_leitura, fmt)
                     mes = str(dt.month)
